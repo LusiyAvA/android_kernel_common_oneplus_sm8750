@@ -1,1 +1,63 @@
-IyBMdW5hIGludGVncmF0aW9uIG5vdGVzCgpUaGlzIGJyYW5jaCBpcyB0aGUgc3RvY2sgT25lUGx1cyAxMyBjb21tb24ga2VybmVsCihgb25lcGx1cy9zbTg3NTBfYl8xNi4wLjBfb25lcGx1c18xM2AsIExpbnV4IDYuNi4xMTgsClBKWjExMF8xNi4wLjkuNDAxKENOMDEpIC8gYW5kcm9pZDE1LTYuNi0yMDI2LTAxX3IyMikgcGx1cyB0aGUKZm9sbG93aW5nIHBpbm5lZCBjaGFuZ2VzLiBFdmVyeXRoaW5nIGlzIGFwcGxpZWQgYnkKYHNjcmlwdHMvbHVuYS1pbnRlZ3JhdGUuc2hgIChpZGVtcG90ZW50KSBhbmQgYnVpbHQgYnkKYC5naXRodWIvd29ya2Zsb3dzL2x1bmEtYnVpbGQueW1sYDsgdGhlIGludGVncmF0aW9uIGlzIGNvbW1pdHRlZApiYWNrIHRvIHRoaXMgYnJhbmNoIG9ubHkgYWZ0ZXIgYSBzdWNjZXNzZnVsIGJ1aWxkLgoKIyMgS2VybmVsU1UgZHJpdmVyOiBTdWtpU1UtVWx0cmEgKGJ1aWx0aW4pCgotIFNvdXJjZTogYFN1a2lTVS1VbHRyYS9TdWtpU1UtVWx0cmFgLCBicmFuY2ggYGJ1aWx0aW5gLAogIGNvbW1pdCBgNzBmYTBlMDkyYTJjODEwNjA4MjNmOGFlNTI2ZWFjMTRmZGRhMjkzMGAKLSBWZW5kb3JlZCB1bmRlciBgS2VybmVsU1UvYCAoaXRzIGBrZXJuZWwvYCArIGBMSUNFTlNFYCwgd2l0aCB0aGUKICBgdWFwaWAgc3ltbGluayBrZXB0KSwgZXhwb3NlZCBhcyBgZHJpdmVycy9rZXJuZWxzdWAgc3ltbGluaywKICB3aXJlZCBpbnRvIGBkcml2ZXJzL01ha2VmaWxlYCBhbmQgYGRyaXZlcnMvS2NvbmZpZ2AKICAodGhlIHVwc3RyZWFtIGBzZXR1cC5zaGAgbGF5b3V0KS4KLSBUaGUgb2xkZXIgYFJlU3VraVNVL1JlU3VraVNVYCBsaW5lIHdhcyByZW5hbWVkIHRvCiAgYEJha2EtU1UvQmFrYVNVYCBhbmQgbm8gbG9uZ2VyIHNoaXBzIEtQTSBpbiB0aGUga2VybmVsIGRyaXZlciwKICB3aGljaCBpcyB3aHkgdGhlIFN1a2lTVS1VbHRyYSBidWlsdGluIGxpbmUgaXMgdXNlZCBoZXJlLgotIFNVU0ZTIHN1cHBvcnQgaXMgYnVpbHQgaW50byB0aGlzIGRyaXZlciAoU1VTRlMgaW5saW5lIGhvb2tzKTsKICB0aGUgc3VzZnM0a3N1IGAxMF9lbmFibGVfc3VzZnNfZm9yX2tzdS5wYXRjaGAgKHdyaXR0ZW4gZm9yCiAgdXBzdHJlYW0gS2VybmVsU1UpIG11c3QgTk9UIGJlIGFwcGxpZWQgb24gdG9wLgoKIyMgU1VTRlMgdjIuMy4wIChsYXRlc3Qgc3RhYmxlKQoKLSBTb3VyY2U6IGBzaW1vbnB1bmsvc3VzZnM0a3N1YCAoR2l0TGFiKSwgYnJhbmNoCiAgYGdraS1hbmRyb2lkMTUtNi42YCwgY29tbWl0CiAgYGEwZjljNTllMjI0M2Y4YTVkYjk1NWY0YWQxNjg2ZDVlMGFkMjZlMWFgICgyMDI2LTA5LTI2LAogIGBTVVNGU19WRVJTSU9OICJ2Mi4zLjAiYCwgaW5jbHVkZXMgcG9zdC1yZWxlYXNlIGZpeGVzIG9mIHRoZQogIDIuMy4wIHN0YWJsZSBsaW5lKQotIEFwcGxpZWQ6IGBrZXJuZWxfcGF0Y2hlcy81MF9hZGRfc3VzZnNfaW5fZ2tpLWFuZHJvaWQxNS02LjYucGF0Y2hgCiAgcGx1cyBgZnMvc3VzZnMuY2AsIGBpbmNsdWRlL2xpbnV4L3N1c2ZzLmhgLAogIGBpbmNsdWRlL2xpbnV4L3N1c2ZzX2RlZi5oYC4gVGhlIHBhdGNoIGFwcGxpZXMgY2xlYW5seSB0byB0aGlzCiAgdHJlZSAodmVyaWZpZWQgYnkgZHJ5LXJ1biBiZWZvcmUgZmlyc3QgaW50ZWdyYXRpb24pLgoKIyMgQ29uZmlndXJhdGlvbiAoYXJjaC9hcm02NC9jb25maWdzL2draV9kZWZjb25maWcpCgotIGBDT05GSUdfS1NVPXlgCi0gS1BNOiBgQ09ORklHX0tQTT15YCwgYW5kIGBDT05GSUdfU1VLSVNVX0tQTT15YCDigJQgdGhlIGxhdHRlciBpcwogIGFuIGFsaWFzIHN5bWJvbCBhZGRlZCB0byBgS2VybmVsU1Uva2VybmVsL0tjb25maWdgIHRoYXQKICBgc2VsZWN0YHMgYEtQTWAsIHNvIGJvdGggbGluZXMgYXJlIHJlYWwgaW4gdGhlIGZpbmFsIGAuY29uZmlnYAogICh1cHN0cmVhbSBvbmx5IGRlZmluZXMgYENPTkZJR19LUE1gKS4gS1BNIGFsc28gc2VsZWN0cwogIGBLQUxMU1lNU2AgLyBgS0FMTFNZTVNfQUxMYC4KLSBgQ09ORklHX0tTVV9TVVNGUz15YCB3aXRoIGFsbCBgQ09ORklHX0tTVV9TVVNGU18qYAogIHN1Yi1mZWF0dXJlcyBlbmFibGVkLgotIEJURjogYENPTkZJR19ERUJVR19JTkZPX0JURj15YCB3YXMgYWxyZWFkeSBpbiB0aGUgc3RvY2sKICBna2lfZGVmY29uZmlnOyB0aGUgd29ya2Zsb3cgdmVyaWZpZXMgdGhlIGAuQlRGYCBzZWN0aW9uIGV4aXN0cwogIGluIHRoZSBidWlsdCBgdm1saW51eGAgKHBhaG9sZSBjb21lcyBmcm9tIHRoZSBgZHdhcnZlc2AKICBwYWNrYWdlOyB0aGUgY29tcGlsZXIgaXMgdGhlIHRyZWUtcGlubmVkIEFPU1AgY2xhbmcgcjUxMDkyOCkuCgojIyBWZXJzaW9uIGRpc3BsYXkgYW5kIGtlcm5lbCBuYW1lCgotIEtlcm5lbFNVIGRyaXZlciB2ZXJzaW9uIHNob3duIGluIHRoZSBtYW5hZ2VyIGlzIGdlbmVyYXRlZCBpbgogIGBLZXJuZWxTVS9rZXJuZWwvTWFrZWZpbGVgIGFzCiAgYHY8dGFnPi08dmVyc2lvbiBjb2RlPi08YnVpbGQgZGF0ZSBZWVlZTU1ERD4tbHVuYWAKICAoYnVpbGQgZGF0ZSBpcyB0YWtlbiBhdCBjb21waWxlIHRpbWU7IGBsdW5hYCBpcyB0aGUKICBwcm9kdWN0aW9uLWxpbmUgaWRlbnRpZmllcikuCi0gTm8gTE9DQUxWRVJTSU9OIGJyYW5kaW5nIHdhcyBhZGRlZDogdGhlIGtlcm5lbCByZWxlYXNlIHN0cmluZwogIHN0YXlzIGluIHN0b2NrIEdLSSBzdHlsZSAoYENPTkZJR19MT0NBTFZFUlNJT049Ii00ayJgIGFzIGluIHRoZQogIHN0b2NrIGRlZmNvbmZpZykgYW5kIGJ1aWxkcyBydW4gb24gYSBjbGVhbiBjb21taXR0ZWQgdHJlZSwgc28KICBubyBgLWRpcnR5YCBzdWZmaXggYXBwZWFycy4K
+# Luna integration notes
+
+This branch is the stock OnePlus 13 common kernel
+(`oneplus/sm8750_b_16.0.0_oneplus_13`, Linux 6.6.118,
+PJZ110_16.0.9.401(CN01) / android15-6.6-2026-01_r22) plus the
+following pinned changes. Everything is applied by
+`scripts/luna-integrate.sh` (idempotent) and built by
+`.github/workflows/luna-build.yml`; the integration is committed
+back to this branch only after a successful build.
+
+## KernelSU driver: SukiSU-Ultra (builtin)
+
+- Source: `SukiSU-Ultra/SukiSU-Ultra`, branch `builtin`,
+  commit `70fa0e092a2c81060823f8ae526eac14fdda2930`
+- Vendored under `KernelSU/` (its `kernel/` + `LICENSE`, with the
+  `uapi` symlink kept), exposed as `drivers/kernelsu` symlink,
+  wired into `drivers/Makefile` and `drivers/Kconfig`
+  (the upstream `setup.sh` layout).
+- The older `ReSukiSU/ReSukiSU` line was renamed to
+  `Baka-SU/BakaSU` and no longer ships KPM in the kernel driver,
+  which is why the SukiSU-Ultra builtin line is used here.
+- SUSFS support is built into this driver (SUSFS inline hooks);
+  the susfs4ksu `10_enable_susfs_for_ksu.patch` (written for
+  upstream KernelSU) must NOT be applied on top.
+
+## SUSFS v2.3.0 (latest stable)
+
+- Source: `simonpunk/susfs4ksu` (GitLab), branch
+  `gki-android15-6.6`, commit
+  `a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a` (2026-09-26,
+  `SUSFS_VERSION "v2.3.0"`, includes post-release fixes of the
+  2.3.0 stable line)
+- Applied: `kernel_patches/50_add_susfs_in_gki-android15-6.6.patch`
+  plus `fs/susfs.c`, `include/linux/susfs.h`,
+  `include/linux/susfs_def.h`. The patch applies cleanly to this
+  tree (verified by dry-run before first integration).
+
+## Configuration (arch/arm64/configs/gki_defconfig)
+
+- `CONFIG_KSU=y`
+- KPM: `CONFIG_KPM=y`, and `CONFIG_SUKISU_KPM=y` — the latter is
+  an alias symbol added to `KernelSU/kernel/Kconfig` that
+  `select`s `KPM`, so both lines are real in the final `.config`
+  (upstream only defines `CONFIG_KPM`). KPM also selects
+  `KALLSYMS` / `KALLSYMS_ALL`.
+- `CONFIG_KSU_SUSFS=y` with all `CONFIG_KSU_SUSFS_*`
+  sub-features enabled.
+- BTF: `CONFIG_DEBUG_INFO_BTF=y` was already in the stock
+  gki_defconfig; the workflow verifies the `.BTF` section exists
+  in the built `vmlinux` (pahole comes from the `dwarves`
+  package; the compiler is the tree-pinned AOSP clang r510928).
+
+## Version display and kernel name
+
+- KernelSU driver version shown in the manager is generated in
+  `KernelSU/kernel/Makefile` as
+  `v<tag>-<version code>-<build date YYYYMMDD>-luna`
+  (build date is taken at compile time; `luna` is the
+  production-line identifier).
+- No LOCALVERSION branding was added: the kernel release string
+  stays in stock GKI style (`CONFIG_LOCALVERSION="-4k"` as in the
+  stock defconfig) and builds run on a clean committed tree, so
+  no `-dirty` suffix appears.
