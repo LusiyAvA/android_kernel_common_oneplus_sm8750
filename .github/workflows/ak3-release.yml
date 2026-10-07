@@ -1,0 +1,134 @@
+name: Luna AK3 Release
+
+# Packages the kernel Images from a successful Luna Kernel Build run
+# into AnyKernel3 flashable zips and publishes them as a GitHub
+# Release. Does not rebuild the kernel: it downloads the artifacts
+# of the given build run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Luna Kernel Build run ID to take artifacts from"
+        required: true
+        default: "37601839968"
+      release_tag:
+        description: "Git tag for the release"
+        required: true
+        default: "luna-6.6.139"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download kernel artifacts from the build run
+        uses: actions/download-artifact@v4
+        with:
+          name: luna-kernel-7ba27cd08748affb0149483886d42af6e64b075b
+          run-id: ${{ inputs.build_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dl
+
+      - name: Build AnyKernel3 zips (KPatch-Next and plain variants)
+        run: |
+          set -euo pipefail
+          IMG_DIR="dl/out/arch/arm64/boot"
+          ls -lh "$IMG_DIR"
+          KERNELRELEASE="$(cat dl/kernelrelease.txt)"
+          echo "kernelrelease: $KERNELRELEASE"
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git ak3-src
+          rm -rf ak3-src/.git
+
+          make_zip() {
+            local variant="$1" image_src="$2" string_suffix="$3"
+            local work="pkg-$variant"
+            rm -rf "$work" && mkdir -p "$work"
+            cp -a ak3-src/. "$work/"
+            cp "$image_src" "$work/Image"
+            cat > "$work/anykernel.sh" << EOF
+          ### AnyKernel3 Ramdisk Mod Script
+          ## osm0sis @ xda-developers
+
+          ### AnyKernel setup
+          # begin properties
+          properties() { '
+          kernel.string=Luna Kernel $KERNELRELEASE (ReSukiSU + SUSFS v2.3.0$string_suffix) for OnePlus 13
+          do.devicecheck=1
+          do.modules=0
+          do.systemless=1
+          do.cleanup=1
+          do.cleanuponabort=0
+          device.name1=sun
+          supported.versions=
+          supported.patchlevels=
+          '; } # end properties
+
+          # shell variables
+          block=boot;
+          is_slot_device=auto;
+          ramdisk_compression=auto;
+          patch_vbmeta_flag=auto;
+
+          ## AnyKernel methods (DO NOT CHANGE)
+          # import AnyKernel3 core
+          . tools/ak3-core.sh
+
+          ## AnyKernel install
+          dump_boot;
+          write_boot;
+          ## end install
+          EOF
+            (cd "$work" && zip -r9 "../LunaKernel-OP13-6.6.139-${variant}-AK3.zip" . -x "*.git*")
+          }
+          make_zip "KPN"   "$IMG_DIR/Image.kpn" " + KPatch-Next 0.13.5-2"
+          make_zip "Plain" "$IMG_DIR/Image"     ""
+          ls -lh LunaKernel-*.zip
+          sha256sum LunaKernel-*.zip | tee sha256sums.txt
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          KERNELRELEASE="$(cat dl/kernelrelease.txt)"
+          cat > notes.md << 'NOTES'
+          Luna Kernel for **OnePlus 13** (SM8750 / sun), built from this repository.
+
+          - Kernel: `@KR@` (ACK android15-6.6-2026-07_r11 merged: Google security updates through 2026-07, incl. the CVE-2026-43499 rtmutex fix; KMI generation unchanged)
+          - Root: ReSukiSU (BakaSU) driver version `v4.1.0-35217-20261007-luna`, SUSFS v2.3.0
+          - BTF debug info included (`.BTF` section verified in vmlinux)
+
+          ## Assets
+
+          - **LunaKernel-OP13-6.6.139-KPN-AK3.zip** — AnyKernel3 package with the KPatch-Next 0.13.5-2 patched kernel. Use this one for the KPM/KP-N module ecosystem.
+          - **LunaKernel-OP13-6.6.139-Plain-AK3.zip** — AnyKernel3 package with the unpatched kernel (ReSukiSU + SUSFS only).
+
+          ## Flashing
+
+          Flash the zip with a custom recovery or a kernel flasher app (root required, unlocked bootloader). The installer checks for device `sun` and writes to the boot partition of the current slot. Back up your stock boot image first.
+
+          ## SHA256
+
+          ```
+          @SUMS@
+          ```
+          NOTES
+          sed -i "s|@KR@|$KERNELRELEASE|g" notes.md
+          sed -i "/@SUMS@/r sha256sums.txt" notes.md
+          sed -i "/@SUMS@/d" notes.md
+          cat notes.md
+          gh release create "${{ inputs.release_tag }}" \
+            --title "Luna Kernel 6.6.139 — OnePlus 13 (ReSukiSU + SUSFS + KPatch-Next)" \
+            --notes-file notes.md \
+            LunaKernel-OP13-6.6.139-KPN-AK3.zip LunaKernel-OP13-6.6.139-Plain-AK3.zip \
+          || gh release upload "${{ inputs.release_tag }}" \
+               LunaKernel-OP13-6.6.139-KPN-AK3.zip LunaKernel-OP13-6.6.139-Plain-AK3.zip --clobber
+          gh release view "${{ inputs.release_tag }}" --json url,tagName,assets --jq '{url, tag: .tagName, assets: [.assets[].name]}'
