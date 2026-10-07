@@ -1,0 +1,96 @@
+name: Luna Kernel Build
+
+# Integrates SukiSU-Ultra (builtin) + SUSFS v2.3.0 + KPM into this
+# OnePlus 13 common kernel, builds it, and - only when the build
+# succeeds - commits the integration back to this branch.
+# See INTEGRATION_LUNA.md for pins and design notes.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/lib/node_modules 2>/dev/null || true
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flex bison bc libelf-dev libssl-dev \
+            dwarves zstd cpio curl git python3 rsync
+
+      - name: Integrate SukiSU-Ultra + SUSFS (pinned, idempotent)
+        run: bash scripts/luna-integrate.sh
+
+      - name: Download AOSP clang r510928 (pinned by build.config.constants)
+        run: |
+          mkdir -p "$HOME/clang"
+          curl -sL "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android15-release/clang-r510928.tar.gz" \
+            | tar xz -C "$HOME/clang"
+          "$HOME/clang/bin/clang" --version | head -n 2
+          which pahole && pahole --version
+
+      - name: Configure (gki_defconfig) and verify configs
+        run: |
+          export PATH="$HOME/clang/bin:$PATH"
+          make ARCH=arm64 LLVM=1 O=out gki_defconfig
+          for cfg in CONFIG_KSU=y CONFIG_KPM=y CONFIG_SUKISU_KPM=y \
+                     CONFIG_KSU_SUSFS=y CONFIG_DEBUG_INFO_BTF=y \
+                     CONFIG_KALLSYMS_ALL=y; do
+            grep -q "^${cfg}$" out/.config && echo "OK  $cfg" || { echo "MISSING $cfg"; exit 1; }
+          done
+          make ARCH=arm64 LLVM=1 O=out kernelrelease | tee kernelrelease.txt
+
+      - name: Build kernel Image
+        run: |
+          export PATH="$HOME/clang/bin:$PATH"
+          make ARCH=arm64 LLVM=1 O=out -j"$(nproc)" Image 2>&1 | tee build.log
+          ls -lh out/arch/arm64/boot/Image out/vmlinux
+
+      - name: Verify BTF and driver version string
+        run: |
+          export PATH="$HOME/clang/bin:$PATH"
+          llvm-readelf -S out/vmlinux | grep -E "\.BTF" || { echo "No .BTF section"; exit 1; }
+          strings out/vmlinux | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[0-9]{8}-luna" | head -n 3 || true
+          cat kernelrelease.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: luna-kernel-${{ github.sha }}
+          path: |
+            out/arch/arm64/boot/Image
+            out/vmlinux
+            out/System.map
+            out/.config
+            kernelrelease.txt
+            build.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Commit integration back to this branch (only after a green build)
+        if: success()
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Tree already integrated; nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat(luna): integrate SukiSU-Ultra builtin + SUSFS v2.3.0 + KPM"
+          git push origin HEAD:${{ github.ref_name }}
