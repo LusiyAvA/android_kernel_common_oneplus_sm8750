@@ -103,6 +103,16 @@ def main():
             shutil.copy2(resolved, dst)
             stats["resolved"] += 1
             continue
+        patch = resolved + ".patch"
+        if os.path.isfile(patch):
+            # Patch form (for very large files): a unified diff from
+            # the stock (ours) file to the hand-resolved merged file.
+            r = subprocess.run(["git", "apply",
+                                os.path.abspath(patch)],
+                               cwd=a.ours, capture_output=True)
+            if r.returncode == 0:
+                stats["resolved"] += 1
+                continue
         conflicts.append(rel)
 
     print(f"[luna-ack-merge] took ACK version: {stats['theirs']}, "
