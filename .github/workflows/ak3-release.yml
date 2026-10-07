@@ -42,7 +42,11 @@ jobs:
           set -euo pipefail
           IMG_DIR="dl/out/arch/arm64/boot"
           ls -lh "$IMG_DIR"
-          KERNELRELEASE="$(cat dl/kernelrelease.txt)"
+          # kernelrelease.txt from the build contains make's
+          # Entering/Leaving directory lines around the release string.
+          KERNELRELEASE="$(grep -oE '^[0-9]+\.[0-9]+\.[0-9]+-[^[:space:]]+' dl/kernelrelease.txt | head -n1)"
+          [ -n "$KERNELRELEASE" ]
+          
           echo "kernelrelease: $KERNELRELEASE"
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git ak3-src
           rm -rf ak3-src/.git
@@ -98,7 +102,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          KERNELRELEASE="$(cat dl/kernelrelease.txt)"
+          KERNELRELEASE="$(grep -oE '^[0-9]+\.[0-9]+\.[0-9]+-[^[:space:]]+' dl/kernelrelease.txt | head -n1)"
+          [ -n "$KERNELRELEASE" ]
           cat > notes.md << 'NOTES'
           Luna Kernel for **OnePlus 13** (SM8750 / sun), built from this repository.
 
