@@ -1,12 +1,29 @@
 # Luna integration notes
 
-This branch is the stock OnePlus 13 common kernel
+This branch starts from the stock OnePlus 13 common kernel
 (`oneplus/sm8750_b_16.0.0_oneplus_13`, Linux 6.6.118,
-PJZ110_16.0.9.401(CN01) / android15-6.6-2026-01_r22) plus the
-following pinned changes. Everything is applied by
-`scripts/luna-integrate.sh` (idempotent) and built by
-`.github/workflows/luna-build.yml`; the integration is committed
-back to this branch only after a successful build.
+PJZ110_16.0.9.401(CN01) / android15-6.6-2026-01_r22). The build
+workflow first merges the latest Google ACK security release
+(see below), then applies the pinned changes listed after it.
+Source-level changes are applied by `scripts/luna-integrate.sh`
+(idempotent); the merge and the integration are pushed back to
+this branch only after a successful build.
+
+## Base update: ACK android15-6.6-2026-07_r11
+
+- The workflow merges the ACK tag
+  `android15-6.6-2026-07_r11`
+  (`cc1e318bd6fc5a65a436cd6d3f2d7a8fca25271b`) from
+  `android.googlesource.com/kernel/common` — the newest Google
+  GKI security release for android15-6.6 (the 2026-10 quarterly
+  release was not tagged yet). This brings in all Android
+  Security Bulletin kernel fixes published after the stock
+  2026-01_r22 base, including the official CVE-2026-43499 fix.
+- KMI is unchanged: `KMI_GENERATION=8` in both the stock base
+  and this tag, and the pinned toolchain is the same
+  (clang r510928), so vendor-module compatibility is preserved.
+  The kernel sublevel moves forward with the LTS branch, as
+  expected for a security-base update.
 
 ## KernelSU driver: ReSukiSU (BakaSU)
 
@@ -53,8 +70,12 @@ back to this branch only after a successful build.
   path, `waiter->task != current`), and
   `rt_mutex_start_proxy_lock()` in `rtmutex_api.c` called it
   for any non-zero return instead of only on error. The stock
-  tree did not contain the fix; the patch applies with a small
-  offset and is applied by the integrate script.
+  2026-01 base did not contain the fix. After the ACK
+  2026-07_r11 merge above, the official fix is already in the
+  tree and the integrate script detects it (marker:
+  `waiter_task` / "never enqueued") and skips this patch; the
+  patch is kept as a safeguard for building from the unmerged
+  stock base.
 
 ## KPatch-Next (KP-N) 0.13.5-2
 
