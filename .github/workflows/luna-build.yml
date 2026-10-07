@@ -63,7 +63,7 @@ jobs:
                      CONFIG_DEBUG_INFO_BTF=y CONFIG_KALLSYMS_ALL=y; do
             grep -q "^${cfg}$" out/.config && echo "OK  $cfg" || { echo "MISSING $cfg"; exit 1; }
           done
-          make ARCH=arm64 LLVM=1 O=out kernelrelease | tee kernelrelease.txt
+          make --no-print-directory ARCH=arm64 LLVM=1 O=out kernelrelease | tee kernelrelease.txt
 
       - name: Build kernel Image
         run: |
