@@ -1,9 +1,9 @@
 name: Luna Kernel Build
 
-# Integrates ReSukiSU (BakaSU) + SUSFS v2.3.0 + CVE-2026-43499 fix
-# into this OnePlus 13 common kernel, builds it, patches the Image
-# with KPatch-Next, and - only when everything succeeds - commits
-# the integration back to this branch.
+# Merges the latest ACK security release into this OnePlus 13 common
+# kernel, integrates ReSukiSU (BakaSU) + SUSFS v2.3.0, builds it,
+# patches the Image with KPatch-Next, and - only when everything
+# succeeds - pushes the merge + integration back to this branch.
 # See INTEGRATION_LUNA.md for pins and design notes.
 
 on:
@@ -17,16 +17,26 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 350
     steps:
-      - name: Checkout
+      - name: Checkout (full history, needed for the ACK merge)
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Free disk space
         run: |
           sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
             /opt/hostedtoolcache/CodeQL /usr/local/lib/node_modules 2>/dev/null || true
           df -h
+
+      - name: Merge ACK android15-6.6-2026-07_r11 (latest Google security release)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add ack https://android.googlesource.com/kernel/common
+          git fetch ack tag android15-6.6-2026-07_r11
+          git merge --no-edit android15-6.6-2026-07_r11 || { echo "MERGE CONFLICT in:"; git diff --name-only --diff-filter=U; exit 1; }
+          git log --oneline -3
+          grep -E "^(VERSION|PATCHLEVEL|SUBLEVEL) =" Makefile
 
       - name: Install build dependencies
         run: |
@@ -93,15 +103,11 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
 
-      - name: Commit integration back to this branch (only after a green build)
+      - name: Push merge + integration back to this branch (only after a green build)
         if: success()
         run: |
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "Tree already integrated; nothing to commit."
-            exit 0
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "feat(luna): integrate ReSukiSU (BakaSU) + SUSFS v2.3.0 + CVE-2026-43499 fix"
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "feat(luna): integrate ReSukiSU (BakaSU) + SUSFS v2.3.0 + CVE-2026-43499 fix"
           git push origin HEAD:${{ github.ref_name }}
