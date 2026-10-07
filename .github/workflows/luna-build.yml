@@ -1,8 +1,9 @@
 name: Luna Kernel Build
 
-# Integrates SukiSU-Ultra (builtin) + SUSFS v2.3.0 + KPM into this
-# OnePlus 13 common kernel, builds it, and - only when the build
-# succeeds - commits the integration back to this branch.
+# Integrates ReSukiSU (BakaSU) + SUSFS v2.3.0 + CVE-2026-43499 fix
+# into this OnePlus 13 common kernel, builds it, patches the Image
+# with KPatch-Next, and - only when everything succeeds - commits
+# the integration back to this branch.
 # See INTEGRATION_LUNA.md for pins and design notes.
 
 on:
@@ -33,7 +34,7 @@ jobs:
           sudo apt-get install -y flex bison bc libelf-dev libssl-dev \
             dwarves zstd cpio curl git python3 rsync
 
-      - name: Integrate SukiSU-Ultra + SUSFS (pinned, idempotent)
+      - name: Integrate ReSukiSU + SUSFS + CVE fix (pinned, idempotent)
         run: bash scripts/luna-integrate.sh
 
       - name: Download AOSP clang r510928 (pinned by build.config.constants)
@@ -48,9 +49,8 @@ jobs:
         run: |
           export PATH="$HOME/clang/bin:$PATH"
           make ARCH=arm64 LLVM=1 O=out gki_defconfig
-          for cfg in CONFIG_KSU=y CONFIG_KPM=y CONFIG_SUKISU_KPM=y \
-                     CONFIG_KSU_SUSFS=y CONFIG_DEBUG_INFO_BTF=y \
-                     CONFIG_KALLSYMS_ALL=y; do
+          for cfg in CONFIG_KSU=y CONFIG_KSU_SUSFS=y \
+                     CONFIG_DEBUG_INFO_BTF=y CONFIG_KALLSYMS_ALL=y; do
             grep -q "^${cfg}$" out/.config && echo "OK  $cfg" || { echo "MISSING $cfg"; exit 1; }
           done
           make ARCH=arm64 LLVM=1 O=out kernelrelease | tee kernelrelease.txt
@@ -68,12 +68,23 @@ jobs:
           strings out/vmlinux | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[0-9]{8}-luna" | head -n 3 || true
           cat kernelrelease.txt
 
+      - name: Apply KPatch-Next 0.13.5-2 to Image
+        run: |
+          cd out/arch/arm64/boot
+          curl -sL -O https://github.com/KernelSU-Next/KPatch-Next/releases/download/0.13.5-2/kptools-linux
+          curl -sL -O https://github.com/KernelSU-Next/KPatch-Next/releases/download/0.13.5-2/kpimg-linux
+          chmod +x kptools-linux
+          ./kptools-linux -p -i Image -k kpimg-linux -o Image.kpn
+          ./kptools-linux -l -i Image.kpn | head -n 20
+          ls -lh Image Image.kpn
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: luna-kernel-${{ github.sha }}
           path: |
             out/arch/arm64/boot/Image
+            out/arch/arm64/boot/Image.kpn
             out/vmlinux
             out/System.map
             out/.config
@@ -92,5 +103,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "feat(luna): integrate SukiSU-Ultra builtin + SUSFS v2.3.0 + KPM"
+          git commit -m "feat(luna): integrate ReSukiSU (BakaSU) + SUSFS v2.3.0 + CVE-2026-43499 fix"
           git push origin HEAD:${{ github.ref_name }}
