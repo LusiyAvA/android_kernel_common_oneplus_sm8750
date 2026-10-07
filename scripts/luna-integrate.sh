@@ -72,7 +72,7 @@ assert old_fetch in s, "Kbuild unshallow line not found"
 s = s.replace(old_fetch, "# luna: vendored copy, skip git fetch --unshallow")
 old_count = "KSU_LOCAL_VERSION := $(shell cd $(KSU_SRC); $(GIT_BIN) rev-list --count HEAD)"
 assert old_count in s, "Kbuild rev-list line not found"
-s = s.replace(old_count, "KSU_LOCAL_VERSION := 4517 # luna: pinned BakaSU main commit count")
+s = s.replace(old_count, "# luna: pinned BakaSU main commit count (vendored layout)\nKSU_LOCAL_VERSION := 4517")
 # The vendored copy lives inside the kernel repo, so accept the kernel
 # repo's .git (two levels up) in the "is a git checkout" check, and pin
 # the tag name (git describe would otherwise see kernel repo tags).
@@ -82,7 +82,7 @@ s = s.replace(old_check, "test -e $(KSU_SRC)/../.git -o -e $(KSU_SRC)/../../.git
 lines = s.splitlines()
 for i, ln in enumerate(lines):
     if ln.startswith("KSU_TAG_NAME"):
-        lines[i] = 'KSU_TAG_NAME    := v4.1.0 # luna: pinned (latest stable tag on main)'
+        lines[i] = 'KSU_TAG_NAME    := v4.1.0'
         break
 else:
     raise AssertionError("Kbuild KSU_TAG_NAME line not found")
