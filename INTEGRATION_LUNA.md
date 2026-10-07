@@ -114,3 +114,39 @@ this branch only after a successful build.
   stock defconfig). `scripts/setlocalversion` is patched to
   strip the `-dirty` marker, because the build tree carries the
   not-yet-committed integration while compiling.
+
+## How the ACK security merge works (run #4 onwards)
+
+Run #3 tried a plain `git merge` of the ACK tag and failed with
+~162 conflicts: this tree's git history is a OnePlus re-import and
+shares no usable merge base with ACK, so git compared against an
+ancient base. Content-wise the base of this tree is exactly ACK
+`android15-6.6-2026-01_r22`, so the workflow now merges at content
+level with `scripts/luna-ack-merge.py` (base = ACK 2026-01_r22
+tree, theirs = ACK 2026-07_r11 tree): files changed on only one
+side are taken from that side; files changed on both sides go
+through `git merge-file`.
+
+Measured for 2026-01_r22 -> 2026-07_r11: 2750 files take the ACK
+version, 26 added, 109 deleted, 74 Oplus-only files kept, 19 files
+merge cleanly. The remaining 7 both-changed files are pre-resolved
+by hand in `patches/ack-merge-resolved/`:
+
+- `android/abi_gki_aarch64_sunxi` - ACK symbol additions win
+  (Oplus only added a blank line).
+- `fs/erofs/zdata.c` - keep both: ACK's
+  `trace_android_vh_erofs_iostat_submit` call and the Oplus
+  empty-bio WARN debug block.
+- `include/linux/pgsize_migration.h` - ACK file verbatim (Oplus
+  had only reordered an include that ACK keeps).
+- `kernel/fork.c`, `kernel/sched/core.c`, `kernel/sched/sched.h` -
+  keep the Oplus sched_ext (scx) call sites and `#include "ext.h"`;
+  ACK never carried sched_ext on this branch.
+- `include/linux/sched.h` - real KABI collision in task_struct:
+  Oplus (CONFIG_SLIM_SCHED=y) uses slot 2 for the sched_ext entity
+  pointer, ACK uses slot 2 for its new `user_dumpable` field
+  (accessed unconditionally from kernel/exit.c and
+  kernel/ptrace.c). Resolution: SLIM branch keeps scx at slot 2
+  and puts `user_dumpable` at slot 4; the non-SLIM branch takes
+  ACK's slot 2 layout. Slots 1-8 appear exactly once per branch,
+  so task_struct layout positions are unchanged.
