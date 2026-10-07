@@ -31,6 +31,9 @@
 #include <linux/kernel.h>
 #include <linux/bsearch.h>
 #include <linux/btf_ids.h>
+#ifdef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+#include <linux/susfs_def.h>
+#endif // #ifdef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
 
 #include "kallsyms_internal.h"
 
@@ -103,8 +106,11 @@ static char kallsyms_get_symbol_type(unsigned int off)
 {
 	/*
 	 * Get just the first code, look it up in the token table,
-	 * and return the first char from this token.
+	 * and return the first char from this token. If MSB of length
+	 * is 1, it is a "big" symbol, so needs an additional byte.
 	 */
+	if (kallsyms_names[off] & 0x80)
+		off++;
 	return kallsyms_token_table[kallsyms_token_index[kallsyms_names[off + 1]]];
 }
 
@@ -428,8 +434,8 @@ static const char *kallsyms_lookup_buildid(unsigned long addr,
 					 offset, modname, namebuf);
 
 	if (!ret)
-		ret = ftrace_mod_address_lookup(addr, symbolsize,
-						offset, modname, namebuf);
+		ret = ftrace_mod_address_lookup(addr, symbolsize, offset,
+						modname, modbuildid, namebuf);
 
 found:
 	cleanup_symbol_name(namebuf);
@@ -799,8 +805,36 @@ static int s_show(struct seq_file *m, void *p)
 		seq_printf(m, "%px %c %s\t[%s]\n", value,
 			   type, iter->name, iter->module_name);
 	} else
+#ifndef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
 		seq_printf(m, "%px %c %s\n", value,
 			   iter->type, iter->name);
+#else
+	{
+		if (susfs_starts_with(iter->name, "ksu_") ||
+			susfs_starts_with(iter->name, "__ksu_") ||
+			susfs_starts_with(iter->name, "susfs_") ||
+			susfs_starts_with(iter->name, "ksud") ||
+			susfs_starts_with(iter->name, "is_ksu_") ||
+			susfs_starts_with(iter->name, "is_manager_") ||
+			susfs_starts_with(iter->name, "escape_to_") ||
+			susfs_starts_with(iter->name, "setup_selinux") ||
+			susfs_starts_with(iter->name, "track_throne") ||
+			susfs_starts_with(iter->name, "on_post_fs_data") ||
+			susfs_starts_with(iter->name, "try_umount") ||
+			susfs_starts_with(iter->name, "kernelsu") ||
+			susfs_starts_with(iter->name, "__initcall__kmod_kernelsu") ||
+			susfs_starts_with(iter->name, "apply_kernelsu") ||
+			susfs_starts_with(iter->name, "handle_sepolicy") ||
+			susfs_starts_with(iter->name, "getenforce") ||
+			susfs_starts_with(iter->name, "setenforce") ||
+			susfs_starts_with(iter->name, "is_zygote"))
+		{
+			return 0;
+		}
+		seq_printf(m, "%px %c %s\n", value,
+			   iter->type, iter->name);
+	}
+#endif
 	return 0;
 }
 
