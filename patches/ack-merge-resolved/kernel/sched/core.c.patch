@@ -1,0 +1,11 @@
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -6230,8 +6230,6 @@
+ 		if (unlikely(p == RETRY_TASK))
+ 			goto restart;
+ 
+-		trace_android_vh_chk_task(&p, rq);
+-
+ 		/* Assume the next prioritized class is idle_sched_class */
+ 		if (!p) {
+ 			put_prev_task(rq, prev);
