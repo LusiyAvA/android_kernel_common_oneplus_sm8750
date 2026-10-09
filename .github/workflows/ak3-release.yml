@@ -79,11 +79,12 @@ jobs:
           supported.patchlevels=
           '; } # end properties
 
-          # shell variables
-          block=boot;
-          is_slot_device=auto;
-          ramdisk_compression=auto;
-          patch_vbmeta_flag=auto;
+          # shell variables (uppercase: required by current AnyKernel3;
+          # lowercase names are ignored by ak3-core.sh and leave BLOCK empty)
+          BLOCK=/dev/block/bootdevice/by-name/boot;
+          IS_SLOT_DEVICE=1;
+          RAMDISK_COMPRESSION=auto;
+          PATCH_VBMETA_FLAG=auto;
 
           ## AnyKernel methods (DO NOT CHANGE)
           # import AnyKernel3 core
