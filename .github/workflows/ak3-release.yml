@@ -91,8 +91,8 @@ jobs:
           . tools/ak3-core.sh
 
           ## AnyKernel install
-          dump_boot;
-          write_boot;
+          split_boot;
+          flash_boot;
           ## end install
           EOF
             (cd "$work" && zip -r9 "../LunaKernel-OP13-6.6.139-${variant}-AK3.zip" . -x "*.git*")
