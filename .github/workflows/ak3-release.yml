@@ -70,7 +70,11 @@ jobs:
           do.systemless=1
           do.cleanup=1
           do.cleanuponabort=0
-          device.name1=sun
+          device.name1=OP5D0DL1
+          device.name2=sun
+          device.name3=PJZ110
+          device.name4=CPH2649
+          device.name5=CPH2653
           supported.versions=
           supported.patchlevels=
           '; } # end properties
@@ -118,7 +122,7 @@ jobs:
 
           ## Flashing
 
-          Flash the zip with a custom recovery or a kernel flasher app (root required, unlocked bootloader). The installer checks for device `sun` and writes to the boot partition of the current slot. Back up your stock boot image first.
+          Flash the zip with a custom recovery or a kernel flasher app (root required, unlocked bootloader). The installer verifies the device is a OnePlus 13 (OP5D0DL1 / sun) and writes to the boot partition of the current slot. Back up your stock boot image first.
 
           ## SHA256
 
@@ -130,10 +134,16 @@ jobs:
           sed -i "/@SUMS@/r sha256sums.txt" notes.md
           sed -i "/@SUMS@/d" notes.md
           cat notes.md
-          gh release create "${{ inputs.release_tag }}" \
-            --title "Luna Kernel 6.6.139 — OnePlus 13 (ReSukiSU + SUSFS + KPatch-Next)" \
-            --notes-file notes.md \
-            LunaKernel-OP13-6.6.139-KPN-AK3.zip LunaKernel-OP13-6.6.139-Plain-AK3.zip \
-          || gh release upload "${{ inputs.release_tag }}" \
-               LunaKernel-OP13-6.6.139-KPN-AK3.zip LunaKernel-OP13-6.6.139-Plain-AK3.zip --clobber
+          if gh release view "${{ inputs.release_tag }}" > /dev/null 2>&1; then
+            gh release upload "${{ inputs.release_tag }}" \
+              LunaKernel-OP13-6.6.139-KPN-AK3.zip LunaKernel-OP13-6.6.139-Plain-AK3.zip --clobber
+            gh release edit "${{ inputs.release_tag }}" \
+              --title "Luna Kernel 6.6.139 — OnePlus 13 (ReSukiSU + SUSFS + KPatch-Next)" \
+              --notes-file notes.md
+          else
+            gh release create "${{ inputs.release_tag }}" \
+              --title "Luna Kernel 6.6.139 — OnePlus 13 (ReSukiSU + SUSFS + KPatch-Next)" \
+              --notes-file notes.md \
+              LunaKernel-OP13-6.6.139-KPN-AK3.zip LunaKernel-OP13-6.6.139-Plain-AK3.zip
+          fi
           gh release view "${{ inputs.release_tag }}" --json url,tagName,assets --jq '{url, tag: .tagName, assets: [.assets[].name]}'
