@@ -31,7 +31,7 @@ this branch only after a successful build.
 
 - Source: `Baka-SU/BakaSU` (the renamed ReSukiSU project), branch
   `main`, commit `c9246641b9eee8b9986050e8bf1832f88da880c2`
-- Vendored under `KernelSU/` (its `kernel/` + `uapi` +
+- Vendored under `KernelSU/` (its `kernel/` + `uapi/` +
   `LICENSE`), exposed as the `drivers/kernelsu` symlink, wired
   into `drivers/Makefile` and `drivers/Kconfig` (the upstream
   `setup.sh` layout).
