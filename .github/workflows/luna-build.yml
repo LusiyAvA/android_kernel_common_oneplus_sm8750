@@ -29,6 +29,12 @@ jobs:
       - name: Merge ACK android15-6.6-2026-07_r11 (content-level, latest Google security release)
         run: |
           set -euo pipefail
+          ACK_MARKER="scripts/luna-ack-2026-07-r11.applied"
+          if [ -f "$ACK_MARKER" ]; then
+            echo "ACK android15-6.6-2026-07_r11 already applied; skipping merge"
+            grep -E "^(VERSION|PATCHLEVEL|SUBLEVEL) =" Makefile
+            exit 0
+          fi
           # This tree's git history shares no ancestry with ACK (OnePlus
           # re-imports sources), so a git merge picks a bogus base and
           # reports ~162 false conflicts (run #3). Content-wise the base
@@ -37,6 +43,7 @@ jobs:
           curl -sL "https://android.googlesource.com/kernel/common/+archive/refs/tags/android15-6.6-2026-01_r22.tar.gz" | tar xz -C /tmp/ack_r22
           curl -sL "https://android.googlesource.com/kernel/common/+archive/refs/tags/android15-6.6-2026-07_r11.tar.gz" | tar xz -C /tmp/ack_jul
           python3 scripts/luna-ack-merge.py --base /tmp/ack_r22 --theirs /tmp/ack_jul --ours .
+          printf '%s\n' 'android15-6.6-2026-07_r11' > "$ACK_MARKER"
           grep -E "^(VERSION|PATCHLEVEL|SUBLEVEL) =" Makefile
 
       - name: Install build dependencies
