@@ -19,17 +19,19 @@ this branch only after a successful build.
   release was not tagged yet). This brings in all Android
   Security Bulletin kernel fixes published after the stock
   2026-01_r22 base, including the official CVE-2026-43499 fix.
-- KMI is unchanged: `KMI_GENERATION=8` in both the stock base
-  and this tag, and the pinned toolchain is the same
-  (clang r510928), so vendor-module compatibility is preserved.
-  The kernel sublevel moves forward with the LTS branch, as
-  expected for a security-base update.
+- KMI generation is unchanged: `KMI_GENERATION=8` in both the
+  stock base and this tag, the pinned toolchain remains clang
+  r510928, and the final generic ABI definition matches the ACK
+  tag. These are the required static compatibility conditions;
+  device boot testing is still required before calling vendor
+  module compatibility proven. The kernel sublevel moves forward
+  with the LTS branch, as expected for a security-base update.
 
 ## KernelSU driver: ReSukiSU (BakaSU)
 
 - Source: `Baka-SU/BakaSU` (the renamed ReSukiSU project), branch
   `main`, commit `c9246641b9eee8b9986050e8bf1832f88da880c2`
-- Vendored under `KernelSU/` (its `kernel/` + `uapi/` +
+- Vendored under `KernelSU/` (its `kernel/` + `uapi` +
   `LICENSE`), exposed as the `drivers/kernelsu` symlink, wired
   into `drivers/Makefile` and `drivers/Kconfig` (the upstream
   `setup.sh` layout).
@@ -140,8 +142,10 @@ by hand in `patches/ack-merge-resolved/`:
 - `include/linux/pgsize_migration.h` - ACK file verbatim (Oplus
   had only reordered an include that ACK keeps).
 - `kernel/fork.c`, `kernel/sched/core.c`, `kernel/sched/sched.h` -
-  keep the Oplus sched_ext (scx) call sites and `#include "ext.h"`;
-  ACK never carried sched_ext on this branch.
+  keep the Oplus sched_ext (scx) integration and vendor hooks.
+  `kernel/sched/core.c.patch` explicitly preserves the stock
+  `android_vh_chk_task` hook in the non-SCX fast path; dropping it
+  would bypass OnePlus's registered task-selection extension.
 - `include/linux/sched.h` - real KABI collision in task_struct:
   Oplus (CONFIG_SLIM_SCHED=y) uses slot 2 for the sched_ext entity
   pointer, ACK uses slot 2 for its new `user_dumpable` field
