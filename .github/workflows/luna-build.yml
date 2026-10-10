@@ -28,6 +28,7 @@ jobs:
 
       - name: Merge ACK android15-6.6-2026-07_r11 (content-level, latest Google security release)
         run: |
+          set -euo pipefail
           # This tree's git history shares no ancestry with ACK (OnePlus
           # re-imports sources), so a git merge picks a bogus base and
           # reports ~162 false conflicts (run #3). Content-wise the base
@@ -40,15 +41,19 @@ jobs:
 
       - name: Install build dependencies
         run: |
+          set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y flex bison bc libelf-dev libssl-dev \
             dwarves zstd cpio curl git python3 rsync
 
       - name: Integrate ReSukiSU + SUSFS + CVE fix (pinned, idempotent)
-        run: bash scripts/luna-integrate.sh
+        run: |
+          set -euo pipefail
+          bash scripts/luna-integrate.sh
 
       - name: Download AOSP clang r510928 (pinned by build.config.constants)
         run: |
+          set -euo pipefail
           mkdir -p "$HOME/clang"
           curl -sL "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android15-release/clang-r510928.tar.gz" \
             | tar xz -C "$HOME/clang"
@@ -57,6 +62,7 @@ jobs:
 
       - name: Configure (gki_defconfig) and verify configs
         run: |
+          set -euo pipefail
           export PATH="$HOME/clang/bin:$PATH"
           make ARCH=arm64 LLVM=1 O=out gki_defconfig
           for cfg in CONFIG_KSU=y CONFIG_KSU_SUSFS=y \
@@ -67,12 +73,15 @@ jobs:
 
       - name: Build kernel Image
         run: |
+          set -euo pipefail
           export PATH="$HOME/clang/bin:$PATH"
           make ARCH=arm64 LLVM=1 O=out -j"$(nproc)" Image 2>&1 | tee build.log
-          ls -lh out/arch/arm64/boot/Image out/vmlinux
+          test -s out/Module.symvers
+          ls -lh out/arch/arm64/boot/Image out/vmlinux out/Module.symvers
 
       - name: Verify BTF and driver version string
         run: |
+          set -euo pipefail
           export PATH="$HOME/clang/bin:$PATH"
           llvm-readelf -S out/vmlinux | grep -E "\.BTF" || { echo "No .BTF section"; exit 1; }
           strings out/vmlinux | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[0-9]{8}-luna" | head -n 3 || true
@@ -80,6 +89,7 @@ jobs:
 
       - name: Apply KPatch-Next 0.13.5-2 to Image
         run: |
+          set -euo pipefail
           cd out/arch/arm64/boot
           curl -sL -O https://github.com/KernelSU-Next/KPatch-Next/releases/download/0.13.5-2/kptools-linux
           curl -sL -O https://github.com/KernelSU-Next/KPatch-Next/releases/download/0.13.5-2/kpimg-linux
@@ -97,10 +107,11 @@ jobs:
             out/arch/arm64/boot/Image.kpn
             out/vmlinux
             out/System.map
+            out/Module.symvers
             out/.config
             kernelrelease.txt
             build.log
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
 
       - name: Push merge + integration back to this branch (only after a green build)
