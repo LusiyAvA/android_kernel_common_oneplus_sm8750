@@ -127,7 +127,9 @@ ancient base. Content-wise the base of this tree is exactly ACK
 level with `scripts/luna-ack-merge.py` (base = ACK 2026-01_r22
 tree, theirs = ACK 2026-07_r11 tree): files changed on only one
 side are taken from that side; files changed on both sides go
-through `git merge-file`.
+through `git merge-file`. A successful merge writes
+`scripts/luna-ack-2026-07-r11.applied`; later builds detect this
+tracked marker and skip replaying the merge over SUSFS-modified files.
 
 Measured for 2026-01_r22 -> 2026-07_r11: 2750 files take the ACK
 version, 26 added, 109 deleted, 74 Oplus-only files kept, 19 files
