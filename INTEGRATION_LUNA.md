@@ -107,6 +107,14 @@ this branch only after a successful build.
 - `CONFIG_TMPFS_XATTR=y`, `CONFIG_TMPFS_POSIX_ACL=y`
   (module/mount ecosystem support, as in OnePlus builders).
 - `CONFIG_KALLSYMS_ALL=y` (KPatch-Next requirement).
+- `CONFIG_OPLUS_GAME_OPT=y` adds an in-tree Linux 6.6 adaptation of
+  the OnePlus 15 Hybrid Frame Sync ABI and opt-in rwsem reader
+  handoff. The interfaces are `/proc/game_opt/hfs_ctrl`,
+  `/proc/game_opt/lock_stealing`, and
+  `/proc/sys/game_frame_sync/hybrid_frame`.
+- `CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y` offloads RCU callback
+  processing from all CPUs by default, matching the OnePlus 15 GKI
+  configuration without requiring an `rcu_nocbs=` boot argument.
 - BTF: `CONFIG_DEBUG_INFO_BTF=y` was already in the stock
   gki_defconfig; the workflow verifies the `.BTF` section exists
   in the built `vmlinux` (pahole comes from the `dwarves`

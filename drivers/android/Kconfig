@@ -123,4 +123,13 @@ config ANDROID_WRAPFD
 	  file supporting ioctl API for file ownership that controls ability to
 	  map the file.
 
+config OPLUS_GAME_OPT
+	bool "Oplus Game Opt compatibility layer"
+	depends on ANDROID_VENDOR_HOOKS && PROC_FS && SYSCTL
+	help
+	  Build the Oplus Game Opt compatibility layer adapted from the
+	  OnePlus 15 implementation. It provides the Hybrid Frame Sync ioctl
+	  and poll ABI together with opt-in rwsem reader handoff for selected
+	  game tasks through /proc/game_opt.
+
 endmenu
