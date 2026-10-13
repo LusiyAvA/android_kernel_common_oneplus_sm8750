@@ -1,7 +1,7 @@
 name: Luna Kernel Build
 
 # Merges the latest ACK security release into this OnePlus 13 common
-# kernel, integrates ReSukiSU (BakaSU) + SUSFS v2.3.0, builds it,
+# kernel, integrates the pinned ReSukiSU RC + SUSFS stable snapshot, builds it,
 # patches the Image with KPatch-Next, and - only when everything
 # succeeds - pushes the merge + integration back to this branch.
 # See INTEGRATION_LUNA.md for pins and design notes.
@@ -53,7 +53,7 @@ jobs:
           sudo apt-get install -y flex bison bc libelf-dev libssl-dev \
             dwarves zstd cpio curl git python3 rsync
 
-      - name: Integrate ReSukiSU + SUSFS + CVE fix (pinned, idempotent)
+      - name: Integrate ReSukiSU RC + SUSFS + CVE fix (pinned, idempotent)
         run: |
           set -euo pipefail
           bash scripts/luna-integrate.sh
@@ -73,6 +73,11 @@ jobs:
           export PATH="$HOME/clang/bin:$PATH"
           make ARCH=arm64 LLVM=1 O=out gki_defconfig
           for cfg in CONFIG_KSU=y CONFIG_KSU_SUSFS=y \
+                     CONFIG_KSU_SUSFS_SUS_PATH=y CONFIG_KSU_SUSFS_SUS_MOUNT=y \
+                     CONFIG_KSU_SUSFS_SUS_KSTAT=y CONFIG_KSU_SUSFS_SPOOF_UNAME=y \
+                     CONFIG_KSU_SUSFS_ENABLE_LOG=y CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y \
+                     CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y \
+                     CONFIG_KSU_SUSFS_OPEN_REDIRECT=y CONFIG_KSU_SUSFS_SUS_MAP=y \
                      CONFIG_DEBUG_INFO_BTF=y CONFIG_KALLSYMS_ALL=y; do
             grep -q "^${cfg}$" out/.config && echo "OK  $cfg" || { echo "MISSING $cfg"; exit 1; }
           done
@@ -82,27 +87,37 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/clang/bin:$PATH"
-          make ARCH=arm64 LLVM=1 O=out -j"$(nproc)" Image 2>&1 | tee build.log
+          make ARCH=arm64 LLVM=1 O=out -j"$(nproc)" Image modules 2>&1 | tee build.log
           test -s out/Module.symvers
           ls -lh out/arch/arm64/boot/Image out/vmlinux out/Module.symvers
 
       - name: Verify BTF and driver version string
         run: |
           set -euo pipefail
+          source scripts/luna-root-stack.env
           export PATH="$HOME/clang/bin:$PATH"
           llvm-readelf -S out/vmlinux | grep -E "\.BTF" || { echo "No .BTF section"; exit 1; }
-          strings out/vmlinux | grep -E "v[0-9]+\.[0-9]+\.[0-9]+-[0-9]+-[0-9]{8}-luna" | head -n 3 || true
+          VERSION_MATCHES="$(strings out/vmlinux | grep -E "${BAKASU_TAG}-${BAKASU_VERSION_CODE}-[0-9]{8}-luna" || true)"
+          [ -n "$VERSION_MATCHES" ] || { echo "ReSukiSU version string not found"; exit 1; }
+          printf '%s\n' "$VERSION_MATCHES" | sed -n '1,3p'
           cat kernelrelease.txt
 
-      - name: Apply KPatch-Next 0.13.5-2 to Image
+      - name: Apply pinned KPatch-Next to Image
         run: |
           set -euo pipefail
+          source scripts/luna-root-stack.env
           cd out/arch/arm64/boot
-          curl -sL -O https://github.com/KernelSU-Next/KPatch-Next/releases/download/0.13.5-2/kptools-linux
-          curl -sL -O https://github.com/KernelSU-Next/KPatch-Next/releases/download/0.13.5-2/kpimg-linux
+          BASE_URL="https://github.com/KernelSU-Next/KPatch-Next/releases/download/${KPATCH_NEXT_VERSION}"
+          curl -fL -o kptools-linux "${BASE_URL}/kptools-linux"
+          curl -fL -o kpimg-linux "${BASE_URL}/kpimg-linux"
+          printf '%s  %s\n' \
+            "$KPATCH_NEXT_KPTOOLS_SHA256" kptools-linux \
+            "$KPATCH_NEXT_KPIMG_SHA256" kpimg-linux | sha256sum -c -
           chmod +x kptools-linux
           ./kptools-linux -p -i Image -k kpimg-linux -o Image.kpn
-          ./kptools-linux -l -i Image.kpn | head -n 20
+          ./kptools-linux -l -i Image.kpn | tee kpn-info.txt
+          test -s Image.kpn
+          test -s kpn-info.txt
           ls -lh Image Image.kpn
 
       - name: Upload artifacts
@@ -112,6 +127,7 @@ jobs:
           path: |
             out/arch/arm64/boot/Image
             out/arch/arm64/boot/Image.kpn
+            out/arch/arm64/boot/kpn-info.txt
             out/vmlinux
             out/System.map
             out/Module.symvers
@@ -126,8 +142,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          source scripts/luna-root-stack.env
           if [ -n "$(git status --porcelain)" ]; then
             git add -A
-            git commit -m "feat(luna): merge ACK android15-6.6-2026-07_r11 + integrate ReSukiSU (BakaSU) + SUSFS v2.3.0"
+            git commit -m "feat(luna): integrate ReSukiSU ${BAKASU_TAG} + SUSFS ${SUSFS_VERSION} + KP-N ${KPATCH_NEXT_VERSION}"
           fi
           git push origin HEAD:${{ github.ref_name }}

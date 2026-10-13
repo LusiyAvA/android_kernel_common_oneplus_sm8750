@@ -27,19 +27,23 @@ this branch only after a successful build.
   module compatibility proven. The kernel sublevel moves forward
   with the LTS branch, as expected for a security-base update.
 
-## KernelSU driver: ReSukiSU (BakaSU)
+## KernelSU driver: ReSukiSU v4.2.0-rc3
 
-- Source: `Baka-SU/BakaSU` (the renamed ReSukiSU project), branch
-  `main`, commit `c9246641b9eee8b9986050e8bf1832f88da880c2`
+- Source: `Baka-SU/BakaSU` (the repository that now carries the
+  former ReSukiSU release line),
+  release tag `v4.2.0-rc3`, commit
+  `239e1e8871b8fcd51a6e5b3002e0ba522fdd99fb`. This is the
+  newest published release candidate as of 2026-10-13; unreleased
+  `main` commits are intentionally not branded as the RC.
 - Vendored under `KernelSU/` (its `kernel/` + `uapi/` +
   `LICENSE`), exposed as the `drivers/kernelsu` symlink, wired
   into `drivers/Makefile` and `drivers/Kconfig` (the upstream
   `setup.sh` layout).
 - `KernelSU/kernel/Kbuild` carries three small "luna" patches for
   the vendored (non-git) layout: the version commit count is
-  pinned to the BakaSU main count at the pinned commit (4517, so
-  the version code is 35217 exactly as with a real clone), the
-  tag name is pinned to `v4.1.0` (latest stable tag), and a
+  pinned to the ReSukiSU RC count at the pinned commit (4471, so
+  the version code is 35171 exactly as with a real clone), the
+  tag name is pinned to `v4.2.0-rc3`, and a
   `%BUILD_DATE%` placeholder is added (see version display
   below).
 - SUSFS support is built into this driver (its Kconfig provides
@@ -50,14 +54,18 @@ this branch only after a successful build.
   KPM. Its `MANAGE_KPM` ioctls are deprecated upstream; KPM is
   provided by KPatch-Next instead (see below), which this driver
   detects at runtime (`GET_KERNEL_PATCH_IMPLEMENT` -> KPN).
+- Reproducible pins for ReSukiSU, SUSFS, and KPatch-Next are
+  centralized in `scripts/luna-root-stack.env`; CI also checks the
+  downloaded KP-N tools against their upstream SHA-256 digests.
 
 ## SUSFS v2.3.0 (latest stable)
 
 - Source: `simonpunk/susfs4ksu` (GitLab), branch
   `gki-android15-6.6`, commit
-  `a0f9c59e2243f8a5db955f4ad1686d5e0ad26e1a` (2026-09-26,
-  `SUSFS_VERSION "v2.3.0"`, includes post-release fixes of the
-  2.3.0 stable line)
+  `bd7d199ac87808001127e8a6d076832e2938cf0d`
+  (`SUSFS_VERSION "v2.3.0"`, latest stable branch head checked on
+  2026-10-13). This snapshot removes the obsolete exec hook
+  declaration while retaining the v2.3.0 kernel ABI.
 - Applied: `kernel_patches/50_add_susfs_in_gki-android15-6.6.patch`
   plus `fs/susfs.c`, `include/linux/susfs.h`,
   `include/linux/susfs_def.h`. The patch applies cleanly to this
@@ -109,7 +117,7 @@ this branch only after a successful build.
 - KernelSU driver version shown in the manager is generated
   from `CONFIG_KSU_FULL_NAME_FORMAT` as
   `%TAG_NAME%-%KSU_VERSION%-%BUILD_DATE%-luna`, e.g.
-  `v4.1.0-35217-20261007-luna` (build date is taken at compile
+  `v4.2.0-rc3-35171-20261013-luna` (build date is taken at compile
   time; `luna` is the production-line identifier).
 - No LOCALVERSION branding was added: the kernel release string
   stays in stock GKI style (`CONFIG_LOCALVERSION="-4k"` as in the

@@ -11,11 +11,10 @@ on:
       build_run_id:
         description: "Luna Kernel Build run ID to take artifacts from"
         required: true
-        default: "37601839968"
       release_tag:
         description: "Git tag for the release"
         required: true
-        default: "luna-6.6.139"
+        default: "luna-6.6.139-resukisu-v4.2.0-rc3"
 
 permissions:
   contents: write
@@ -32,7 +31,8 @@ jobs:
       - name: Download kernel artifacts from the build run
         uses: actions/download-artifact@v4
         with:
-          name: luna-kernel-7ba27cd08748affb0149483886d42af6e64b075b
+          pattern: luna-kernel-*
+          merge-multiple: true
           run-id: ${{ inputs.build_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dl
@@ -40,6 +40,7 @@ jobs:
       - name: Build AnyKernel3 zips (KPatch-Next and plain variants)
         run: |
           set -euo pipefail
+          source scripts/luna-root-stack.env
           IMG_DIR="dl/out/arch/arm64/boot"
           ls -lh "$IMG_DIR"
           # kernelrelease.txt from the build contains make's
@@ -64,7 +65,7 @@ jobs:
           ### AnyKernel setup
           # begin properties
           properties() { '
-          kernel.string=Luna Kernel $KERNELRELEASE (ReSukiSU + SUSFS v2.3.0$string_suffix) for OnePlus 13
+          kernel.string=Luna Kernel $KERNELRELEASE (ReSukiSU $BAKASU_TAG + SUSFS $SUSFS_VERSION$string_suffix) for OnePlus 13
           do.devicecheck=1
           do.modules=0
           do.systemless=1
@@ -97,7 +98,7 @@ jobs:
           EOF
             (cd "$work" && zip -r9 "../LunaKernel-OP13-6.6.139-${variant}-AK3.zip" . -x "*.git*")
           }
-          make_zip "KPN"   "$IMG_DIR/Image.kpn" " + KPatch-Next 0.13.5-2"
+          make_zip "KPN"   "$IMG_DIR/Image.kpn" " + KPatch-Next $KPATCH_NEXT_VERSION"
           make_zip "Plain" "$IMG_DIR/Image"     ""
           ls -lh LunaKernel-*.zip
           sha256sum LunaKernel-*.zip | tee sha256sums.txt
@@ -107,18 +108,19 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
+          source scripts/luna-root-stack.env
           KERNELRELEASE="$(grep -oE '^[0-9]+\.[0-9]+\.[0-9]+-[^[:space:]]+' dl/kernelrelease.txt | head -n1)"
           [ -n "$KERNELRELEASE" ]
           cat > notes.md << 'NOTES'
           Luna Kernel for **OnePlus 13** (SM8750 / sun), built from this repository.
 
           - Kernel: `@KR@` (ACK android15-6.6-2026-07_r11 merged: Google security updates through 2026-07, incl. the CVE-2026-43499 rtmutex fix; KMI generation unchanged)
-          - Root: ReSukiSU (BakaSU) driver version `v4.1.0-35217-20261007-luna`, SUSFS v2.3.0
+          - Root: ReSukiSU `@BAKASU_TAG@` (version code `@BAKASU_VERSION_CODE@`), SUSFS `@SUSFS_VERSION@`
           - BTF debug info included (`.BTF` section verified in vmlinux)
 
           ## Assets
 
-          - **LunaKernel-OP13-6.6.139-KPN-AK3.zip** — AnyKernel3 package with the KPatch-Next 0.13.5-2 patched kernel. Use this one for the KPM/KP-N module ecosystem.
+          - **LunaKernel-OP13-6.6.139-KPN-AK3.zip** — AnyKernel3 package with KPatch-Next `@KPATCH_NEXT_VERSION@`. Use this one for the KPM/KP-N module ecosystem.
           - **LunaKernel-OP13-6.6.139-Plain-AK3.zip** — AnyKernel3 package with the unpatched kernel (ReSukiSU + SUSFS only).
 
           ## Flashing
@@ -132,6 +134,10 @@ jobs:
           ```
           NOTES
           sed -i "s|@KR@|$KERNELRELEASE|g" notes.md
+          sed -i "s|@BAKASU_TAG@|$BAKASU_TAG|g" notes.md
+          sed -i "s|@BAKASU_VERSION_CODE@|$BAKASU_VERSION_CODE|g" notes.md
+          sed -i "s|@SUSFS_VERSION@|$SUSFS_VERSION|g" notes.md
+          sed -i "s|@KPATCH_NEXT_VERSION@|$KPATCH_NEXT_VERSION|g" notes.md
           sed -i "/@SUMS@/r sha256sums.txt" notes.md
           sed -i "/@SUMS@/d" notes.md
           cat notes.md
