@@ -30,7 +30,7 @@ static unsigned int hfs_size(void)
 	return (hfs_end + HFS_BUFFER_CAPACITY - hfs_begin) & HFS_BUFFER_MASK;
 }
 
-static int hfs_sysctl_poll(const struct ctl_table *table, int write,
+static int hfs_sysctl_poll(struct ctl_table *table, int write,
 			   void *buffer, size_t *lenp, loff_t *ppos)
 {
 	return -EOPNOTSUPP;
