@@ -1,3 +1,13 @@
+# OnePlus 13 / PJZ110 compatibility warning
+
+The public common-kernel tree does not contain the HMBIRD scheduler used by the
+stock PJZ110 kernel.  A source-built Image from this repository is therefore a
+research artifact, not a flashable replacement for the stock boot kernel.
+Mixing it with the stock vendor modules caused severe display flicker and a
+green screen on `PJZ110_16.0.5.703(CN01)`.  See
+[`INTEGRATION_LUNA.md`](INTEGRATION_LUNA.md) for the extracted-config evidence
+and the CI compatibility gate.
+
 # How do I submit patches to Android Common Kernels
 
 1. BEST: Make all of your changes to upstream Linux. If appropriate, backport to the stable releases.

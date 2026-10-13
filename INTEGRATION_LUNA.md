@@ -1,5 +1,31 @@
 # Luna integration notes
 
+## PJZ110 compatibility status: source-built Image is not flashable
+
+The stock `PJZ110_16.0.5.703(CN01)` boot Image was extracted and compared
+against the Image produced by this repository.  The stock kernel enables
+`CONFIG_HMBIRD_SCHED=y` and contains OnePlus' HMBIRD scheduler implementation
+(`enqueue_task_hmbird`, `pick_next_task_hmbird`, and related code).  This
+public common-kernel tree has no HMBIRD implementation; it enables
+`CONFIG_SLIM_SCHED=y` / sched_ext instead.  The stock vendor modules remain on
+the device and were built around the stock scheduler/private ABI.
+
+Replacing only the boot Image therefore mixes incompatible scheduler and
+vendor-module contracts.  On the tested device this produced blocked Qualcomm
+performance threads, repeated display commit failures, severe flicker, and a
+green screen.  Disabling the duplicate in-tree Game Opt implementation did not
+fix those symptoms, confirming that Game Opt was a separate collision rather
+than the display root cause.
+
+`scripts/luna-verify-pjz110-compatibility.sh` now enforces the observed stock
+scheduler/KMI conditions.  CI stops before a normal build when they are not
+met.  An explicitly requested research build may still compile a plain Image,
+but receives no compatibility attestation, is not patched with KPatch-Next,
+and cannot pass the AK3 release workflow.  A flashable source-built kernel
+requires the matching HMBIRD implementation and complete device/vendor kernel
+sources.  Until those are available, the safe root experiment is patching the
+exact stock Image with KPatch-Next while leaving its kernel code intact.
+
 This branch starts from the stock OnePlus 13 common kernel
 (`oneplus/sm8750_b_16.0.0_oneplus_13`, Linux 6.6.118,
 PJZ110_16.0.9.401(CN01) / android15-6.6-2026-01_r22). The build
@@ -113,9 +139,10 @@ this branch only after a successful build.
   `/proc/game_opt`; enabling both implementations prevents the vendor module
   from initializing. OnePlus 13 therefore retains the complete vendor Game
   Opt interface instead of the two-entry compatibility subset.
-- `CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y` offloads RCU callback
-  processing from all CPUs by default, matching the OnePlus 15 GKI
-  configuration without requiring an `rcu_nocbs=` boot argument.
+- `CONFIG_RCU_NOCB_CPU_DEFAULT_ALL` is disabled, matching the extracted
+  PJZ110 stock configuration.  The earlier all-CPU offload experiment is not
+  retained because it adds scheduler/latency risk while device compatibility
+  is unresolved.
 - BTF: `CONFIG_DEBUG_INFO_BTF=y` was already in the stock
   gki_defconfig; the workflow verifies the `.BTF` section exists
   in the built `vmlinux` (pahole comes from the `dwarves`

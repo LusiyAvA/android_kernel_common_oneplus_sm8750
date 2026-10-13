@@ -8,6 +8,12 @@ name: Luna Kernel Build
 
 on:
   workflow_dispatch:
+    inputs:
+      allow_incompatible_research_build:
+        description: "Build a non-flashable research Image when PJZ110 compatibility fails"
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -78,11 +84,32 @@ jobs:
                      CONFIG_KSU_SUSFS_ENABLE_LOG=y CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y \
                      CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y \
                      CONFIG_KSU_SUSFS_OPEN_REDIRECT=y CONFIG_KSU_SUSFS_SUS_MAP=y \
-                     CONFIG_DEBUG_INFO_BTF=y CONFIG_KALLSYMS_ALL=y \
-                     CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y; do
+                     CONFIG_DEBUG_INFO_BTF=y CONFIG_KALLSYMS_ALL=y; do
             grep -q "^${cfg}$" out/.config && echo "OK  $cfg" || { echo "MISSING $cfg"; exit 1; }
           done
+          ! grep -q '^CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y$' out/.config || {
+            echo "CONFIG_RCU_NOCB_CPU_DEFAULT_ALL must remain disabled for PJZ110"
+            exit 1
+          }
           make --no-print-directory ARCH=arm64 LLVM=1 O=out kernelrelease | tee kernelrelease.txt
+
+      - name: Verify PJZ110 stock scheduler and KMI contract
+        run: |
+          set -euo pipefail
+          if scripts/luna-verify-pjz110-compatibility.sh out/.config device-compatibility.attestation; then
+            exit 0
+          fi
+          if [ "${{ inputs.allow_incompatible_research_build }}" = "true" ]; then
+            cat > incompatibility-report.txt <<'EOF'
+          UNSAFE RESEARCH BUILD: NOT FLASHABLE
+          The generated common kernel does not implement the HMBIRD scheduler
+          and KMI contract used by PJZ110_16.0.5.703(CN01) vendor modules.
+          EOF
+            echo "Compatibility gate bypassed for a research-only build."
+            exit 0
+          fi
+          echo "Refusing to build a flashable PJZ110 Image from an incompatible common tree."
+          exit 1
 
       - name: Build kernel Image
         run: |
@@ -103,7 +130,8 @@ jobs:
           printf '%s\n' "$VERSION_MATCHES" | sed -n '1,3p'
           cat kernelrelease.txt
 
-      - name: Apply pinned KPatch-Next to Image
+      - name: Apply pinned KPatch-Next to compatible Image
+        if: ${{ hashFiles('device-compatibility.attestation') != '' }}
         run: |
           set -euo pipefail
           source scripts/luna-root-stack.env
@@ -133,6 +161,8 @@ jobs:
             out/System.map
             out/Module.symvers
             out/.config
+            device-compatibility.attestation
+            incompatibility-report.txt
             kernelrelease.txt
             build.log
           if-no-files-found: error

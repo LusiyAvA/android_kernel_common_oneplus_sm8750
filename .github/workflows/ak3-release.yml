@@ -37,6 +37,18 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: dl
 
+      - name: Require PJZ110 compatibility attestation
+        run: |
+          set -euo pipefail
+          test -s dl/device-compatibility.attestation || {
+            echo "Refusing AK3 packaging: build has no PJZ110 compatibility attestation."
+            exit 1
+          }
+          grep -qx 'device=PJZ110' dl/device-compatibility.attestation
+          grep -qx 'scheduler=HMBIRD' dl/device-compatibility.attestation
+          test -s dl/out/arch/arm64/boot/Image.kpn
+          cat dl/device-compatibility.attestation
+
       - name: Build AnyKernel3 zips (KPatch-Next and plain variants)
         run: |
           set -euo pipefail
