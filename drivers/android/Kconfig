@@ -130,6 +130,8 @@ config OPLUS_GAME_OPT
 	  Build the Oplus Game Opt compatibility layer adapted from the
 	  OnePlus 15 implementation. It provides the Hybrid Frame Sync ioctl
 	  and poll ABI together with opt-in rwsem reader handoff for selected
-	  game tasks through /proc/game_opt.
+	  game tasks through /proc/game_opt. Do not enable it on devices that
+	  load the vendor oplus_bsp_game_opt module because both implementations
+	  own the same procfs directory and cannot coexist.
 
 endmenu
