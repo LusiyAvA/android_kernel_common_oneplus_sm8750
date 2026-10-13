@@ -1,3 +1,1 @@
-make[1]: Entering directory '/home/runner/work/android_kernel_common_oneplus_sm8750/android_kernel_common_oneplus_sm8750/out'
-6.6.139-4k-g7ba27cd08748
-make[1]: Leaving directory '/home/runner/work/android_kernel_common_oneplus_sm8750/android_kernel_common_oneplus_sm8750/out'
+6.6.139-4k-gdd503347e829
