@@ -79,6 +79,8 @@ modules.order
 #
 /kernel.spec
 /rpmbuild/
+/artifacts/
+/device-backups/
 
 #
 # Debian directory (make deb-pkg)
@@ -102,6 +104,9 @@ modules.order
 !.cocciconfig
 !.get_maintainer.ignore
 !.gitattributes
+!/.github/
+!/.github/workflows/
+!/.github/workflows/*.yml
 !.gitignore
 !.kunitconfig
 !.mailmap

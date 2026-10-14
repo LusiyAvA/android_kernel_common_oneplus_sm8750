@@ -1,0 +1,148 @@
+name: xkse4 OnePlus 13 root-stack build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout pinned kernel and BakaSU submodule
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /opt/ghc /usr/local/.ghcup \
+            /opt/hostedtoolcache/CodeQL /usr/local/lib/node_modules 2>/dev/null || true
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y bc bison cpio curl dwarves flex git \
+            libelf-dev libssl-dev lz4 python3 rsync zip zstd
+
+      - name: Verify pinned source stack
+        run: |
+          set -euo pipefail
+          source scripts/xkse4-root-stack.env
+          if [ "$(git -C KernelSU rev-parse --is-shallow-repository)" = true ]; then
+            git -C KernelSU fetch --unshallow --tags origin
+          fi
+          test "$(git -C KernelSU rev-parse HEAD)" = "$BAKASU_COMMIT"
+          test "$(git -C KernelSU describe --tags --exact-match)" = "$BAKASU_TAG"
+          grep -Fqx "#define SUSFS_VERSION \"$SUSFS_VERSION\"" include/linux/susfs.h
+          test -f kernel/sched/hmbird/hmbird.c
+          test -L drivers/kernelsu
+          test "$(readlink drivers/kernelsu)" = '../KernelSU/kernel'
+
+      - name: Download pinned AOSP clang
+        run: |
+          set -euo pipefail
+          source scripts/xkse4-root-stack.env
+          mkdir -p .build-tools/clang
+          curl --fail --location --retry 5 --retry-all-errors \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android15-release/clang-${CLANG_VERSION}.tar.gz" \
+            | tar xz -C .build-tools/clang
+          .build-tools/clang/bin/clang --version | sed -n '1,2p'
+
+      - name: Configure and verify device feature set
+        run: |
+          set -euo pipefail
+          export PATH="$GITHUB_WORKSPACE/.build-tools/clang/bin:$PATH"
+          make ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out xkse4_dodge_defconfig
+          for cfg in \
+            CONFIG_KSU=y \
+            CONFIG_KSU_SUSFS=y \
+            CONFIG_KSU_SUSFS_SUS_PATH=y \
+            CONFIG_KSU_SUSFS_SUS_MOUNT=y \
+            CONFIG_KSU_SUSFS_SUS_KSTAT=y \
+            CONFIG_KSU_SUSFS_SPOOF_UNAME=y \
+            CONFIG_KSU_SUSFS_ENABLE_LOG=y \
+            CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y \
+            CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y \
+            CONFIG_KSU_SUSFS_OPEN_REDIRECT=y \
+            CONFIG_KSU_SUSFS_SUS_MAP=y \
+            CONFIG_HMBIRD_SCHED=y \
+            CONFIG_KALLSYMS_ALL=y \
+            CONFIG_DEBUG_INFO_BTF=y; do
+            grep -Fqx "$cfg" out/.config || { echo "missing $cfg"; exit 1; }
+          done
+          ! grep -Fqx 'CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y' out/.config
+          make --no-print-directory ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out kernelrelease \
+            | tee kernelrelease.txt
+
+      - name: Build arm64 Image
+        run: |
+          set -euo pipefail
+          export PATH="$GITHUB_WORKSPACE/.build-tools/clang/bin:$PATH"
+          make ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out -j"$(nproc)" Image \
+            2>&1 | tee build.log
+          test -s out/arch/arm64/boot/Image
+          test -s out/vmlinux
+          test -s out/System.map
+          nm out/vmlinux | grep ' enqueue_task_hmbird$' > hmbird-symbol.txt
+          llvm-readelf -S out/vmlinux | grep '\.BTF' > btf-section.txt
+          test -s hmbird-symbol.txt
+          test -s btf-section.txt
+
+      - name: Patch Image with pinned KPatch-Next
+        run: |
+          set -euo pipefail
+          source scripts/xkse4-root-stack.env
+          image_dir=out/arch/arm64/boot
+          base_url="https://github.com/KernelSU-Next/KPatch-Next/releases/download/${KPATCH_NEXT_VERSION}"
+          curl --fail --location --retry 5 --retry-all-errors \
+            -o "$image_dir/kptools-linux" "$base_url/kptools-linux"
+          curl --fail --location --retry 5 --retry-all-errors \
+            -o "$image_dir/kpimg-linux" "$base_url/kpimg-linux"
+          printf '%s  %s\n' \
+            "$KPATCH_NEXT_KPTOOLS_SHA256" "$image_dir/kptools-linux" \
+            "$KPATCH_NEXT_KPIMG_SHA256" "$image_dir/kpimg-linux" \
+            | sha256sum -c -
+          chmod +x "$image_dir/kptools-linux"
+          "$image_dir/kptools-linux" -p -i "$image_dir/Image" \
+            -k "$image_dir/kpimg-linux" -o "$image_dir/Image.kpn"
+          "$image_dir/kptools-linux" -l -i "$image_dir/Image.kpn" \
+            | tee "$image_dir/kpn-info.txt"
+          test -s "$image_dir/Image.kpn"
+          test -s "$image_dir/kpn-info.txt"
+
+      - name: Package Plain and KPN AnyKernel3 zips
+        run: |
+          set -euo pipefail
+          kernelrelease="$(awk '/^[0-9]+\.[0-9]+\.[0-9]+-/ { print; exit }' kernelrelease.txt)"
+          test -n "$kernelrelease"
+          AK3_WORK_ROOT="$GITHUB_WORKSPACE/.build-ak3" \
+            bash scripts/package-xkse4-ak3.sh \
+              out/arch/arm64/boot release "$kernelrelease"
+          ls -lh release
+
+      - name: Upload kernel, diagnostics, and AK3 packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: xkse4-op13-rootstack-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            out/arch/arm64/boot/Image
+            out/arch/arm64/boot/Image.kpn
+            out/arch/arm64/boot/kpn-info.txt
+            out/.config
+            out/vmlinux
+            out/System.map
+            kernelrelease.txt
+            hmbird-symbol.txt
+            btf-section.txt
+            build.log
+            release/*.zip
+            release/SHA256SUMS
