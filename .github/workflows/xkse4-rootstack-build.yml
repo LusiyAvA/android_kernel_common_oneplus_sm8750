@@ -2,6 +2,9 @@ name: xkse4 OnePlus 13 root-stack build
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - xkse4-resukisu-susfs-v2.2.0
 
 permissions:
   contents: read
