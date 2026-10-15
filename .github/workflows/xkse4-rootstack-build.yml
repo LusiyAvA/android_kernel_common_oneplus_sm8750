@@ -93,7 +93,7 @@ jobs:
           test -s out/arch/arm64/boot/Image
           test -s out/vmlinux
           test -s out/System.map
-          nm out/vmlinux | grep ' enqueue_task_hmbird$' > hmbird-symbol.txt
+          grep -E ' [RrDd] hmbird_sched_class$' out/System.map > hmbird-symbol.txt
           llvm-readelf -S out/vmlinux | grep '\.BTF' > btf-section.txt
           test -s hmbird-symbol.txt
           test -s btf-section.txt
