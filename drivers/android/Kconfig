@@ -123,4 +123,14 @@ config ANDROID_WRAPFD
 	  file supporting ioctl API for file ownership that controls ability to
 	  map the file.
 
+config OPLUS_GAME_OPT_EXT
+	bool "Oplus Game Opt extensions"
+	depends on ANDROID_VENDOR_HOOKS && MODULES && PROC_FS && SYSCTL
+	help
+	  Add the OnePlus 15 Hybrid Frame Sync ABI and opt-in rwsem reader
+	  handoff to the vendor oplus_bsp_game_opt module. The extension waits
+	  until that module is live and then adds only the missing files below
+	  its existing /proc/game_opt directory, avoiding ownership conflicts
+	  with the OnePlus 13 vendor Game Opt implementation.
+
 endmenu

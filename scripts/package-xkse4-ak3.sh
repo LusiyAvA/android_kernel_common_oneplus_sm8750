@@ -17,7 +17,6 @@ kernelrelease="$3"
 . "$script_dir/xkse4-root-stack.env"
 
 test -s "$image_dir/Image"
-test -s "$image_dir/Image.kpn"
 mkdir -p "$output_dir"
 output_dir="$(CDPATH= cd -- "$output_dir" && pwd)"
 
@@ -81,7 +80,9 @@ EOF
 }
 
 make_zip Plain "$image_dir/Image" ''
-make_zip KPN "$image_dir/Image.kpn" " + KPatch-Next ${KPATCH_NEXT_VERSION}"
+if [ -s "$image_dir/Image.kpn" ]; then
+    make_zip KPN "$image_dir/Image.kpn" " + KPatch-Next ${KPATCH_NEXT_VERSION}"
+fi
 
 (
     cd "$output_dir"

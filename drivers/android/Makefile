@@ -8,3 +8,4 @@ obj-$(CONFIG_ANDROID_DEBUG_SYMBOLS)	+= android_debug_symbols.o
 obj-$(CONFIG_ANDROID_VENDOR_HOOKS) += vendor_hooks.o
 obj-$(CONFIG_ANDROID_DEBUG_KINFO)	+= debug_kinfo.o
 obj-$(CONFIG_ANDROID_WRAPFD)		+= wrapfd.o
+obj-$(CONFIG_OPLUS_GAME_OPT_EXT)		+= oplus_game_opt_ext/

@@ -76,11 +76,13 @@ jobs:
             CONFIG_KSU_SUSFS_OPEN_REDIRECT=y \
             CONFIG_KSU_SUSFS_SUS_MAP=y \
             CONFIG_HMBIRD_SCHED=y \
+            CONFIG_OPLUS_GAME_OPT_EXT=y \
+            CONFIG_RCU_NOCB_CPU=y \
+            CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y \
             CONFIG_KALLSYMS_ALL=y \
             CONFIG_DEBUG_INFO_BTF=y; do
             grep -Fqx "$cfg" out/.config || { echo "missing $cfg"; exit 1; }
           done
-          ! grep -Fqx 'CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y' out/.config
           make --no-print-directory ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out kernelrelease \
             | tee kernelrelease.txt
 
@@ -94,33 +96,14 @@ jobs:
           test -s out/vmlinux
           test -s out/System.map
           grep -E ' [RrDd] hmbird_sched_class$' out/System.map > hmbird-symbol.txt
+          grep -E ' [Tt] oplus_hybrid_frame_sync_init$' out/System.map \
+            > game-opt-symbol.txt
           llvm-readelf -S out/vmlinux | grep '\.BTF' > btf-section.txt
           test -s hmbird-symbol.txt
+          test -s game-opt-symbol.txt
           test -s btf-section.txt
 
-      - name: Patch Image with pinned KPatch-Next
-        run: |
-          set -euo pipefail
-          source scripts/xkse4-root-stack.env
-          image_dir=out/arch/arm64/boot
-          base_url="https://github.com/KernelSU-Next/KPatch-Next/releases/download/${KPATCH_NEXT_VERSION}"
-          curl --fail --location --retry 5 --retry-all-errors \
-            -o "$image_dir/kptools-linux" "$base_url/kptools-linux"
-          curl --fail --location --retry 5 --retry-all-errors \
-            -o "$image_dir/kpimg-linux" "$base_url/kpimg-linux"
-          printf '%s  %s\n' \
-            "$KPATCH_NEXT_KPTOOLS_SHA256" "$image_dir/kptools-linux" \
-            "$KPATCH_NEXT_KPIMG_SHA256" "$image_dir/kpimg-linux" \
-            | sha256sum -c -
-          chmod +x "$image_dir/kptools-linux"
-          "$image_dir/kptools-linux" -p -i "$image_dir/Image" \
-            -k "$image_dir/kpimg-linux" -o "$image_dir/Image.kpn"
-          "$image_dir/kptools-linux" -l -i "$image_dir/Image.kpn" \
-            | tee "$image_dir/kpn-info.txt"
-          test -s "$image_dir/Image.kpn"
-          test -s "$image_dir/kpn-info.txt"
-
-      - name: Package Plain and KPN AnyKernel3 zips
+      - name: Package Plain AnyKernel3 zip
         run: |
           set -euo pipefail
           kernelrelease="$(awk '/^[0-9]+\.[0-9]+\.[0-9]+-/ { print; exit }' kernelrelease.txt)"
@@ -138,13 +121,12 @@ jobs:
           retention-days: 14
           path: |
             out/arch/arm64/boot/Image
-            out/arch/arm64/boot/Image.kpn
-            out/arch/arm64/boot/kpn-info.txt
             out/.config
             out/vmlinux
             out/System.map
             kernelrelease.txt
             hmbird-symbol.txt
+            game-opt-symbol.txt
             btf-section.txt
             build.log
             release/*.zip
