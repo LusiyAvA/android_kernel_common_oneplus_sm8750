@@ -10,7 +10,7 @@ kernel while keeping the original `xkse4_dodge_defconfig` feature set intact.
 - BakaSU submodule: `v4.2.0-rc3` at
   `239e1e8871b8fcd51a6e5b3002e0ba522fdd99fb`
 - SUSFS: v2.3.0 testing snapshot at
-  `64e1690ab3b0d067e7f2c37da03da8c04a26d438` on the
+  `590b703a00cdfda97b58f8da2442adb8e59b3425` on the
   `gki-android15-6.6-dev` branch of `simonpunk/susfs4ksu`
 - KPatch-Next: `0.13.5-2`; its Linux tools are downloaded after the kernel
   link and accepted only when both pinned SHA-256 checks pass
